@@ -26,6 +26,8 @@ All notable changes to the Vibe Blog project will be documented in this file.
 ### Contributors
 - @qjymary
 
+Thanks @qjymary for the excellent bug fixes!
+
 ---
 
 ## 2026-02-22 (feature/115-frontend-enhancements)
