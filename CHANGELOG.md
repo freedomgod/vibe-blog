@@ -4,6 +4,31 @@ All notable changes to the Vibe Blog project will be documented in this file.
 
 ---
 
+## 2026-02-27 (PR #100 + Optimizations)
+
+### Fixed
+- 🐛 **Reviewer 假阳性修订循环** — 骨架构建从 8031 字压缩至 517 字，审核从"3 轮超时循环"变为"2.1s 一次通过，得分 100"，修复子要点缺失误报（骨架仅 150 字 preview 导致 LLM 误判）
+- 🐛 **修订任务全部超时** — `_revision_enhance` timeout 从 120s 提升至 240s，修复 4000+ 字章节 qwen3-max-preview 生成超时导致所有修订任务 `TIMED_OUT`
+- 🐛 **LangGraph Future 序列化崩溃** — 将 `_image_future`/`_image_executor` 从 state 移至实例字典 `_image_tasks`，修复 `ormsgpack` 遇到 `Future` 对象抛 `TypeError: Type is not msgpack serializable`
+- 🐛 **时间幻觉** — `writer_correct.j2` 和 `writer_improve.j2` 添加 `current_time`/`current_year` 声明，修复 Writer 修订时无法判断当前年份导致时间幻觉
+- 🐛 **analyze_gaps.j2 中文 placeholder 照搬** — JSON 示例中的 placeholder 从中文（"缺口1"）改为英文尖括号形式（`<gap_1>`），消除 LLM 混淆
+
+### Improved (Optimization Commit 050d830)
+- 🔧 **线程安全** — 添加 `threading.Lock` 保护 `_image_tasks` 字典的并发访问，避免多线程竞态条件
+- 🔧 **骨架构建优化** — reviewer.py 跳过代码块内的 `###` 避免误判为子标题，防止 markdown 代码块中的注释被识别为章节标题
+- 🔧 **代码清理** — 将 `uuid`/`ThreadPoolExecutor` import 移到文件顶部，符合 PEP8 规范
+- 🔧 **测试适配** — test_69_05 更新 tracker 测试适配异步配图流程，test_66 同步骨架构建逻辑
+
+### Tests
+- ✅ test_69_05_session_tracker::test_coder_and_artist_node_calls_tracker PASS
+- ✅ test_66_reviewer_eval 7/8 PASS（R2 逻辑连贯性 FAIL 为预期）
+
+### Contributors
+- @qjymary (原 PR)
+- @lailoo (优化改进)
+
+---
+
 ## 2026-02-22 (feature/115-frontend-enhancements)
 
 ### Added
