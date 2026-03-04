@@ -61,6 +61,39 @@ def _fix_markdown_separators(text: str) -> str:
     return text
 
 
+# LLM 自发添加的中括号标注模式（非代码块内）
+_LLM_ANNOTATION_RE = re.compile(r'【[^\】]{1,6}】')
+
+
+def _strip_llm_annotations(text: str) -> str:
+    """
+    清理 LLM 自发添加的中括号标注（如【修正】【注意】【补充】等）。
+    仅处理非代码块内的内容，避免误伤。
+    """
+    lines = text.split('\n')
+    result = []
+    in_code_block = False
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('```'):
+            in_code_block = not in_code_block
+            result.append(line)
+            continue
+
+        if in_code_block:
+            result.append(line)
+            continue
+
+        # 非代码块内：删除【XX】标注，保留标注后面的内容
+        cleaned = _LLM_ANNOTATION_RE.sub('', line)
+        # 如果清理后整行只剩空白，跳过该行
+        if cleaned.strip():
+            result.append(cleaned)
+
+    return '\n'.join(result)
+
+
 class AssemblerAgent:
     """
     文档组装师 - 负责最终文档组装
@@ -280,8 +313,11 @@ class AssemblerAgent:
         
         # 8. 修复 Markdown 分隔线格式（防止 ---## 连写和 Setext 标题误判）
         full_document = _fix_markdown_separators(full_document)
-        
-        # 9. 统计信息
+
+        # 9. 清理 LLM 自发添加的中括号标注（如【修正】【注意】等）
+        full_document = _strip_llm_annotations(full_document)
+
+        # 10. 统计信息
         word_count = len(full_document)
         image_count = len(images)
         code_block_count = len(code_blocks)
