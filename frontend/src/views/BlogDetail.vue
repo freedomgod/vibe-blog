@@ -63,6 +63,16 @@
       {{ toast.message }}
     </div>
 
+    <!-- 引用悬浮卡片 -->
+    <CitationTooltip
+      :visible="tooltipVisible"
+      :citation="tooltipCitation"
+      :index="tooltipIndex"
+      :position="tooltipPosition"
+      @keep-visible="keepTooltipVisible"
+      @request-hide="requestHideTooltip"
+    />
+
     <!-- 发布弹窗 -->
     <PublishModal
       :show="showPublishModal"
@@ -84,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThemeStore } from '../stores/theme'
 import { useBlogDetail } from '../composables/useBlogDetail'
@@ -92,6 +102,8 @@ import { useMermaidRenderer } from '../composables/useMermaidRenderer'
 import { useMarkdownRenderer } from '../composables/useMarkdownRenderer'
 import { useDownload } from '../composables/useDownload'
 import { usePublish } from '../composables/usePublish'
+import { scanCitationLinks } from '@/utils/citationMatcher'
+import type { Citation } from '@/utils/citationMatcher'
 
 // 导入组件
 import BlogDetailNav from '../components/blog-detail/BlogDetailNav.vue'
@@ -105,6 +117,7 @@ import StatsCard from '../components/blog-detail/sidebar/StatsCard.vue'
 import DownloadCard from '../components/blog-detail/sidebar/DownloadCard.vue'
 import VideoCard from '../components/blog-detail/sidebar/VideoCard.vue'
 import PublishModal from '../components/blog-detail/PublishModal.vue'
+import CitationTooltip from '../components/generate/CitationTooltip.vue'
 import Footer from '../components/Footer.vue'
 
 const route = useRoute()
@@ -183,6 +196,69 @@ onMounted(() => {
 // 监听内容变化，渲染 Mermaid
 watch(() => blog.value?.content, () => {
   setTimeout(renderMermaid, 100)
+})
+
+// --- 引用悬浮卡片 ---
+const tooltipVisible = ref(false)
+const tooltipCitation = ref<Citation | null>(null)
+const tooltipIndex = ref(0)
+const tooltipPosition = ref({ top: 0, left: 0 })
+
+let hoverShowTimer: ReturnType<typeof setTimeout> | null = null
+let hoverHideTimer: ReturnType<typeof setTimeout> | null = null
+
+const showCitationTooltip = (citation: Citation, index: number, rect: DOMRect) => {
+  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+  hoverShowTimer = setTimeout(() => {
+    tooltipVisible.value = true
+    tooltipCitation.value = citation
+    tooltipIndex.value = index
+    tooltipPosition.value = { top: rect.bottom + 8, left: rect.left }
+  }, 200)
+}
+
+const hideCitationTooltip = () => {
+  if (hoverShowTimer) { clearTimeout(hoverShowTimer); hoverShowTimer = null }
+  hoverHideTimer = setTimeout(() => {
+    tooltipVisible.value = false
+  }, 100)
+}
+
+const keepTooltipVisible = () => {
+  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+}
+
+const requestHideTooltip = () => {
+  hideCitationTooltip()
+}
+
+const setupCitationHover = () => {
+  const contentEl = document.querySelector('.blog-content')
+  const citations = blog.value?.citations
+  if (!contentEl || !citations?.length) return
+
+  const matches = scanCitationLinks(contentEl as HTMLElement, citations)
+  matches.forEach(({ element, citation, index }) => {
+    element.addEventListener('mouseenter', () => {
+      const rect = element.getBoundingClientRect()
+      showCitationTooltip(citation, index, rect)
+    })
+    element.addEventListener('mouseleave', () => {
+      hideCitationTooltip()
+    })
+    element.addEventListener('click', (e) => {
+      const targetId = `ref-${index}`
+      const refEl = document.getElementById(targetId)
+      if (refEl) {
+        e.preventDefault()
+        refEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    })
+  })
+}
+
+watch(renderedContent, () => {
+  nextTick(() => setupCitationHover())
 })
 </script>
 

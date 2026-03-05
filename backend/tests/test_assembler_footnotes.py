@@ -174,6 +174,91 @@ class TestReplaceSourceReferences:
         assert 'data-source-url="https://example.com/cache"' in result
 
 
+class TestMergedReferenceLinks:
+    """Verify that assemble() merges cited footnotes and uncited references
+    into a single unified reference_links list."""
+
+    def _run_assemble(self, sections, search_results, reference_links=None):
+        """Helper that runs assemble() with a mock prompt manager and
+        captures the kwargs passed to render_assembler_footer."""
+        from unittest.mock import MagicMock
+
+        captured = {}
+        mock_pm = MagicMock()
+        mock_pm.render_assembler_header.return_value = '# Title\n\n'
+        def capture_footer(**kwargs):
+            captured.update(kwargs)
+            return '\n---\nfooter\n'
+        mock_pm.render_assembler_footer.side_effect = capture_footer
+
+        original_get_pm = _assembler_mod.get_prompt_manager
+        _assembler_mod.get_prompt_manager = lambda: mock_pm
+
+        try:
+            agent = _make_assembler()
+            outline = {
+                'title': 'Test',
+                'reference_links': reference_links or [],
+                'conclusion': {'summary_points': [], 'next_steps': ''},
+            }
+            agent.assemble(
+                outline=outline,
+                sections=sections,
+                code_blocks=[],
+                images=[],
+                search_results=search_results,
+            )
+        finally:
+            _assembler_mod.get_prompt_manager = original_get_pm
+
+        return captured
+
+    def test_cited_sources_come_first(self):
+        sections = [{'content': 'A {source_001} B {source_003}'}]
+        uncited_links = [
+            {'title': 'Extra', 'url': 'https://example.com/extra'},
+        ]
+        captured = self._run_assemble(sections, SEARCH_RESULTS, uncited_links)
+        ref_links = captured['reference_links']
+
+        assert len(ref_links) == 3
+        assert ref_links[0]['ref_id'] == 'ref-1'
+        assert ref_links[0]['url'] == 'https://example.com/redis'
+        assert ref_links[1]['ref_id'] == 'ref-2'
+        assert ref_links[1]['url'] == 'https://example.com/distributed'
+        assert 'ref_id' not in ref_links[2]
+        assert ref_links[2]['url'] == 'https://example.com/extra'
+
+    def test_uncited_duplicate_of_cited_is_removed(self):
+        sections = [{'content': '{source_001}'}]
+        uncited_links = [
+            {'title': 'Redis Again', 'url': 'https://example.com/redis'},
+            {'title': 'New Source', 'url': 'https://example.com/new'},
+        ]
+        captured = self._run_assemble(sections, SEARCH_RESULTS, uncited_links)
+        ref_links = captured['reference_links']
+
+        assert len(ref_links) == 2
+        assert ref_links[0]['ref_id'] == 'ref-1'
+        assert ref_links[1]['url'] == 'https://example.com/new'
+
+    def test_no_cited_footnotes_param(self):
+        """cited_footnotes should no longer be passed to the footer."""
+        sections = [{'content': '{source_001}'}]
+        captured = self._run_assemble(sections, SEARCH_RESULTS)
+        assert 'cited_footnotes' not in captured
+
+    def test_empty_footnotes_only_uncited(self):
+        sections = [{'content': 'No sources here.'}]
+        uncited_links = [
+            {'title': 'Some Link', 'url': 'https://example.com/some'},
+        ]
+        captured = self._run_assemble(sections, SEARCH_RESULTS, uncited_links)
+        ref_links = captured['reference_links']
+        assert len(ref_links) == 1
+        assert ref_links[0]['url'] == 'https://example.com/some'
+
+
 class TestNormalizeUrl:
 
     def test_trailing_slash(self):

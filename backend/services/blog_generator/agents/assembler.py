@@ -253,26 +253,33 @@ class AssemblerAgent:
         
         body = '\n\n---\n\n'.join(body_parts)
         
-        # 5. 分离已引用和未引用的参考链接
+        # 5. 合并已引用和未引用的参考链接为统一列表
         reference_links = outline.get('reference_links', [])
         cited_urls = set(footnote_map.keys())
-        uncited_references = []
+
+        merged_links = []
+        for fn_num, fn_title, fn_url in footnote_list:
+            merged_links.append({
+                'title': fn_title,
+                'url': fn_url,
+                'ref_id': f'ref-{fn_num}',
+            })
+
         for link in reference_links:
             if isinstance(link, dict):
                 url = link.get('url', '')
             else:
                 url = str(link)
             if self._normalize_url(url) not in cited_urls:
-                uncited_references.append(link)
+                merged_links.append(link)
 
         # 6. 生成文章尾部
         conclusion = outline.get('conclusion', {})
         footer = pm.render_assembler_footer(
             summary_points=conclusion.get('summary_points', []),
             next_steps=conclusion.get('next_steps', ''),
-            reference_links=uncited_references,
+            reference_links=merged_links,
             document_references=document_references or [],
-            cited_footnotes=footnote_list,
         )
         
         # 7. 组装完整文档

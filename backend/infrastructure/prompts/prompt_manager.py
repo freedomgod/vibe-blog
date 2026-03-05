@@ -369,7 +369,6 @@ class PromptManager:
         next_steps: str,
         reference_links: list,
         document_references: list = None,
-        cited_footnotes: list = None,
     ) -> str:
         """渲染文章尾部"""
         return self.render(
@@ -378,7 +377,6 @@ class PromptManager:
             next_steps=next_steps or '',
             reference_links=reference_links or [],
             document_references=document_references or [],
-            cited_footnotes=cited_footnotes or [],
         )
 
     def render_knowledge_gap_detector(

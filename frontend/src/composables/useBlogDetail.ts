@@ -1,5 +1,6 @@
 import { ref, readonly } from 'vue'
 import { useRouter } from 'vue-router'
+import type { Citation } from '@/utils/citationMatcher'
 
 /**
  * 博客详情数据接口
@@ -27,6 +28,8 @@ export interface Blog {
   wordCount: number
   // 封面视频
   coverVideo?: string
+  // 引用来源
+  citations: Citation[]
 }
 
 /**
@@ -47,6 +50,16 @@ export interface Toast {
  * - Toast 通知
  * - 收藏功能
  */
+function parseCitations(raw: string | null | undefined): Citation[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
 export function useBlogDetail() {
   const router = useRouter()
   const blog = ref<Blog | null>(null)
@@ -178,7 +191,9 @@ export function useBlogDetail() {
           codeBlocksCount: codeBlocksCount,
           wordCount: wordCount,
           // 封面视频
-          coverVideo: record.cover_video || ''
+          coverVideo: record.cover_video || '',
+          // 引用来源
+          citations: parseCitations(record.citations),
         }
       } else {
         showToast('加载失败: ' + (result.error || '记录不存在'), 'error')
