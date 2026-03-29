@@ -611,7 +611,18 @@ def update_blog_content(blog_id):
             if not requested_path.exists():
                 return jsonify({'success': False, 'error': '原始 Markdown 文件不存在'}), 404
 
-            atomic_write(str(requested_path), markdown, encoding='utf-8')
+            # 确保目标是常规 Markdown 文件，而不是目录或特殊文件
+            if not requested_path.is_file():
+                return jsonify({'success': False, 'error': '原始 Markdown 文件不是常规文件'}), 400
+
+            if requested_path.suffix.lower() not in {'.md', '.markdown'}:
+                return jsonify({'success': False, 'error': '仅支持 .md 或 .markdown 文件'}), 400
+
+            try:
+                atomic_write(str(requested_path), markdown, encoding='utf-8')
+            except (OSError, IOError) as e:
+                logger.error(f"写入 Markdown 文件失败: {e}", exc_info=True)
+                return jsonify({'success': False, 'error': '写入原始 Markdown 文件失败'}), 500
             file_updated = True
 
         return jsonify({
