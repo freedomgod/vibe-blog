@@ -565,8 +565,13 @@ const applyLinePrefixFormat = async (prefix: string) => {
   await updateSelectionAfterEdit(lineStart, lineStart + formattedBlock.length)
 }
 
+const hasSelection = computed(() => {
+  const { start, end } = selectionRange.value
+  return end > start
+})
+
 const applyMarkdownFormat = async (type: 'bold' | 'italic' | 'code' | 'quote' | 'list') => {
-  if (!canPolish.value) return
+  if (!hasSelection.value) return
 
   if (type === 'bold') {
     await applyWrappedFormat('**')
