@@ -14,28 +14,65 @@ import pytest
 
 _BACKEND = os.path.join(os.path.dirname(__file__), '..', '..', 'vibe-blog', 'backend')
 
-# Stub the two direct dependencies of assembler.py so we don't pull in LLM stack.
-_fake_prompts = types.ModuleType('services.blog_generator.prompts')
-_fake_prompts.get_prompt_manager = lambda: None
-sys.modules['services.blog_generator.prompts'] = _fake_prompts
+def _load_assembler_module():
+    """
+    在临时模拟的环境中加载 assembler.py 模块
+    
+    使用上下文管理器确保模拟只在导入期间生效，
+    不污染 sys.modules 影响其他测试。
+    
+    返回: (AssemblerAgent 类, assembler 模块对象)
+    """
+    # 保存原始模块状态
+    original_prompts = sys.modules.get('services.blog_generator.prompts')
+    original_helpers = sys.modules.get('services.blog_generator.utils.helpers')
+    
+    try:
+        # 创建临时模拟模块
+        _fake_prompts = types.ModuleType('services.blog_generator.prompts')
+        _fake_prompts.get_prompt_manager = lambda: None
+        sys.modules['services.blog_generator.prompts'] = _fake_prompts
+        
+        _fake_helpers = types.ModuleType('services.blog_generator.utils.helpers')
+        _fake_helpers.replace_placeholders = lambda c, *a, **kw: c
+        _fake_helpers.estimate_reading_time = lambda *a, **kw: 5
+        _fake_helpers.deduplicate_by_url = lambda x: x
+        _fake_helpers.extract_key_concepts = lambda *a, **kw: []
+        _fake_helpers.generate_anchor_id = lambda x: x.lower() if x else ''
+        sys.modules['services.blog_generator.utils.helpers'] = _fake_helpers
+        
+        # 直接加载 assembler.py 跳过 __init__.py 链条
+        _assembler_path = os.path.join(
+            _BACKEND, 'services', 'blog_generator', 'agents', 'assembler.py'
+        )
+        _spec = importlib.util.spec_from_file_location(
+            'services.blog_generator.agents.assembler', _assembler_path
+        )
+        _assembler_mod = importlib.util.module_from_spec(_spec)
+        sys.modules[_spec.name] = _assembler_mod
+        _spec.loader.exec_module(_assembler_mod)
+        
+        return _assembler_mod.AssemblerAgent, _assembler_mod
+        
+    finally:
+        # 恢复原始模块状态
+        if original_prompts is not None:
+            sys.modules['services.blog_generator.prompts'] = original_prompts
+        else:
+            # 如果原始不存在，删除我们添加的模拟模块
+            sys.modules.pop('services.blog_generator.prompts', None)
+            
+        if original_helpers is not None:
+            sys.modules['services.blog_generator.utils.helpers'] = original_helpers
+        else:
+            sys.modules.pop('services.blog_generator.utils.helpers', None)
+        
+        # 清理我们创建的 assembler 模块引用
+        if '_spec' in locals() and _spec.name in sys.modules:
+            sys.modules.pop(_spec.name, None)
 
-_fake_helpers = types.ModuleType('services.blog_generator.utils.helpers')
-_fake_helpers.replace_placeholders = lambda c, *a, **kw: c
-_fake_helpers.estimate_reading_time = lambda *a, **kw: 5
-sys.modules['services.blog_generator.utils.helpers'] = _fake_helpers
-
-# Direct-load assembler.py via importlib to skip __init__.py chains.
-_assembler_path = os.path.join(
-    _BACKEND, 'services', 'blog_generator', 'agents', 'assembler.py'
-)
-_spec = importlib.util.spec_from_file_location(
-    'services.blog_generator.agents.assembler', _assembler_path
-)
-_assembler_mod = importlib.util.module_from_spec(_spec)
-sys.modules[_spec.name] = _assembler_mod
-_spec.loader.exec_module(_assembler_mod)
-
-AssemblerAgent = _assembler_mod.AssemblerAgent
+# 加载 AssemblerAgent 类和模块
+AssemblerAgent, _assembler_mod = _load_assembler_module()
 
 
 def _make_assembler():
