@@ -184,7 +184,7 @@ class TestE2EDeadCodeCleanup:
         import subprocess
         result = subprocess.run(
             ['grep', '-r', 'multi_round_searcher', '--include=*.py',
-             '-l', os.path.join(os.path.dirname(__file__), '..', 'services')],
+             '-l', os.path.join(os.path.dirname(__file__), '..', '..', 'vibe-blog', 'backend', 'services')],
             capture_output=True, text=True
         )
         assert result.stdout.strip() == '', \

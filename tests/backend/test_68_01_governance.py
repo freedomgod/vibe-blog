@@ -34,7 +34,7 @@ class TestStyleProfilePresets:
         assert s.enable_knowledge_refinement is False
         assert s.image_generation_mode == "mini_section"
         assert s.enable_humanizer is False
-        assert s.enable_fact_check is True
+        assert s.enable_fact_check is False
 
     def test_short_preset(self):
         s = StyleProfile.short()
