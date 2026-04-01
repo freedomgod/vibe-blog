@@ -74,8 +74,6 @@ class ParallelTaskExecutor:
             self._use_parallel = False
         else:
             self._use_parallel = enable_parallel
-        if self._use_parallel and self.max_workers < 3:
-            self.max_workers = 3
 
     def run_parallel(
         self,
@@ -173,6 +171,13 @@ class ParallelTaskExecutor:
                         })
             except TimeoutError:
                 # as_completed 超时：标记未完成的任务并取消 future
+                # 首先立即关闭执行器并取消所有挂起的任务，防止队列中的任务被执行
+                # logger.info(f"超时后关闭执行器，取消 {len(future_to_idx)} 个 future")
+                # for future, idx in future_to_idx.items():
+                #     logger.info(f"  Future {idx} ({results[idx].task_name}): state={future._state}, cancelled={future.cancelled()}, running={future.running()}")
+                executor.shutdown(wait=False, cancel_futures=True)
+                # logger.info("执行器已关闭")
+                # 然后标记未完成的任务状态
                 for future, idx in future_to_idx.items():
                     if results[idx].status == TaskStatus.RUNNING:
                         results[idx].status = TaskStatus.TIMED_OUT
@@ -180,7 +185,10 @@ class ParallelTaskExecutor:
                         results[idx].completed_at = datetime.now()
                         self._calc_duration(results[idx])
                         logger.error(f"任务超时: {results[idx].task_name}")
-                        future.cancel()  # 取消未完成的 future
+                        # # 再次确保 future 被取消（shutdown 已处理，但双重确认）
+                        # if not future.cancelled():
+                        #     cancelled = future.cancel()
+                        #     logger.info(f"   额外取消 future {idx}: cancelled={cancelled}")
 
         # with 块退出后 executor 已 shutdown，不再引用任何 future
         self._emit_batch_completed(results)

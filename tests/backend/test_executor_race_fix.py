@@ -133,7 +133,6 @@ class TestParallelExecutionTimeout:
         running.
         """
         ex = ParallelTaskExecutor(max_workers=1, default_timeout=10)
-        ex._use_parallel = True
 
         task_executed = [False, False, False]
 
