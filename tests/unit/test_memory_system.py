@@ -112,7 +112,7 @@ class TestMtimeCache:
         file_path = tmp_path / f"{user_id}.json"
         data = json.loads(file_path.read_text())
         data["writingProfile"]["preferredStyle"]["summary"] = "外部修改"
-        file_path.write_text(json.dumps(data, ensure_ascii=False))
+        file_path.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
 
         loaded = storage.load(user_id)
         assert loaded["writingProfile"]["preferredStyle"]["summary"] == "外部修改"

@@ -182,13 +182,30 @@ class TestE2EDeadCodeCleanup:
     def test_no_import_multi_round_searcher_in_production(self):
         """D4: 生产代码中无 MultiRoundSearcher 引用"""
         import subprocess
-        result = subprocess.run(
-            ['grep', '-r', 'multi_round_searcher', '--include=*.py',
-             '-l', os.path.join(os.path.dirname(__file__), '..', '..', 'vibe-blog', 'backend', 'services')],
-            capture_output=True, text=True
-        )
-        assert result.stdout.strip() == '', \
-            f"生产代码中仍有 multi_round_searcher 引用:\n{result.stdout}"
+        try:
+            result = subprocess.run(
+                ['grep', '-r', 'multi_round_searcher', '--include=*.py',
+                '-l', os.path.join(os.path.dirname(__file__), '..', '..', 'vibe-blog', 'backend', 'services')],
+                capture_output=True, text=True
+            )
+            assert result.stdout.strip() == '', \
+                f"生产代码中仍有 multi_round_searcher 引用:\n{result.stdout}"
+        except FileNotFoundError:
+            # 没有grep命令时，直接python搜索
+            from pathlib import Path
+            base_dir = Path(__file__).resolve().parent.parent / 'vibe-blog' / 'backend' / 'services'
+            pattern = "multi_round_searcher"
+            matched_files = []
+            if base_dir.exists():
+                for py_file in base_dir.rglob("*.py"):
+                    try:
+                        content = py_file.read_text(encoding="utf-8")
+                    except (OSError, UnicodeDecodeError):
+                        continue
+                    if pattern in content:
+                        matched_files.append(str(py_file))
+                assert matched_files == [], \
+                    f"生产代码中仍有 multi_round_searcher 引用:\n" + "\n".join(matched_files)
 
     def test_init_arxiv_service_removed(self):
         """D5: init_arxiv_service() 函数已删除"""
