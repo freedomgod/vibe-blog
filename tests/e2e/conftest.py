@@ -29,7 +29,6 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             # 只跳过 tests/e2e 目录下的测试
             if "tests/e2e" in item.location[0].replace("\\", "/"):
-                print("跳过的e2e", item.location[0])
                 item.add_marker(skip)
 
 

@@ -19,7 +19,7 @@ backend/coverage.json
 backend/coverage.lcov
 
 # 缓存数据库（可能含敏感信息）
-backend/cache/
+vibe-blog/backend/cache/
 
 # Python
 __pycache__/
@@ -111,10 +111,10 @@ backend/logs/
 
 # 文档目录：设计文档应提交，不忽略 docs/
 
-backend/test_*.py
-backend/test_*.md
-backend/data/
-backend/outputs/
+vibe-blog/backend/test_*.py
+vibe-blog/backend/test_*.md
+vibe-blog/backend/data/
+vibe-blog/backend/outputs/
 deploy.sh
 remote_deploy.sh
 deploy_only.sh

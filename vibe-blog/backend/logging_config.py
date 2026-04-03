@@ -139,8 +139,9 @@ def setup_logging(log_level: str | int = "INFO", log_dir: str | None = None, ena
     # 文件 handler：在只读环境（如 Vercel）下自动跳过
     try:
         base_dir = os.path.dirname(os.path.realpath(__file__))
-        # 统一日志目录到 vibe-blog/logs/（与启动脚本一致）
-        project_root = os.path.dirname(base_dir)
+        # 统一日志目录到项目根目录的 logs/（与启动脚本一致）
+        # base_dir = vibe-blog/backend，向上两级到项目根目录
+        project_root = os.path.dirname(os.path.dirname(base_dir))
         resolved_log_dir = log_dir or os.path.join(project_root, "logs")
         os.makedirs(resolved_log_dir, exist_ok=True)
 
@@ -185,7 +186,8 @@ def create_task_logger(task_id: str, log_dir: str | None = None) -> logging.Hand
     返回 handler 实例，调用方需在任务结束后调用 ``remove_task_logger`` 清理。
     """
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    project_root = os.path.dirname(base_dir)
+    # 向上两级到项目根目录，使用根目录的 logs 文件夹
+    project_root = os.path.dirname(os.path.dirname(base_dir))
     resolved_log_dir = log_dir or os.path.join(project_root, "logs", "blog_tasks")
     task_dir = os.path.join(resolved_log_dir, task_id)
     os.makedirs(task_dir, exist_ok=True)

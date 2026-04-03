@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BACKEND_DIR = PROJECT_ROOT / "backend"
+BACKEND_DIR = PROJECT_ROOT / "vibe-blog" / "backend"
 LOGS_DIR = PROJECT_ROOT / "logs"
 TASK_LOGS_DIR = LOGS_DIR / "blog_tasks"
 APP_LOG = LOGS_DIR / "app.log"

@@ -74,7 +74,7 @@ class BlogTaskLog:
         detail: str = "",
         level: str = "info",
         duration_ms: int = 0,
-        tokens: Dict[str, int] = None,
+        tokens: Dict[str, int] | None = None,
         **metadata,
     ):
         """记录一个执行步骤"""
@@ -138,9 +138,10 @@ class BlogTaskLog:
         elif os.environ.get("BLOG_LOGS_DIR"):
             base_logs_dir = os.environ["BLOG_LOGS_DIR"]
         else:
-            # 统一使用 vibe-blog/logs/blog_tasks 目录（与 logging_config.py / 启动脚本一致）
+            # 统一使用项目根目录的 logs/blog_tasks 目录（与 logging_config.py / 启动脚本一致）
             # task_log.py → utils/ → blog_generator/ → services/ → backend/ → vibe-blog/
-            project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            # 需要向上四级到项目根目录：utils → blog_generator → services → backend → vibe-blog → project_root
+            project_root = Path(__file__).resolve().parent.parent.parent.parent
             base_logs_dir = str(project_root / "logs" / "blog_tasks")
         task_dir = Path(base_logs_dir) / self.task_id
         task_dir.mkdir(parents=True, exist_ok=True)
