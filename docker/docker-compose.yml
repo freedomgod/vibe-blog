@@ -2,8 +2,8 @@ services:
   # Flask 后端 - vibe-blog
   backend:
     build:
-      context: ../vibe-blog/backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: vibe-blog/backend/Dockerfile
       args:
         ENABLE_PUBLISHER: "false"  # 改成 "true" 启用发布功能（增加 167 MB）
     container_name: vibe-blog-backend
