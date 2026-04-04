@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pip install -r backend/requirements.txt",
+  "buildCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && uv pip install -e .",
   "framework": "flask",
   "regions": ["sfo1"],
   "rewrites": [

@@ -102,5 +102,48 @@ filterwarnings = [
 ]
 
 # 覆盖率阈值（属于 coverage 工具，不在 pytest.ini_options 内）
+[tool.coverage.run]
+data_file = "vibe-blog/coverage/.coverage"
+source = [
+    "vibe-blog/backend/services",
+    "vibe-blog/backend/utils",
+    "vibe-blog/backend/app",
+    "vibe-blog/backend/routes"
+]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/env/*",
+    "*/.venv/*",
+    "*/site-packages/*",
+    "*/conftest.py",
+    "*/setup.py"
+]
+
 [tool.coverage.report]
 fail_under = 55
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod"
+]
+
+
+[tool.coverage.html]
+directory = "vibe-blog/coverage"
+
+[tool.coverage.json]
+output = "vibe-blog/coverage/coverage.json"
+
+[tool.coverage.lcov]
+output = "vibe-blog/coverage/coverage.lcov"

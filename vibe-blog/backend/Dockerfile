@@ -7,6 +7,13 @@ ARG ENABLE_PUBLISHER=false
 # 设置工作目录
 WORKDIR /app
 
+# 设置环境变量，优化 pip 和 uv 缓存
+ENV PIP_NO_CACHE_DIR=1
+ENV UV_NO_CACHE=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/root/.local/bin:$PATH"
+
 # 使用阿里云镜像源
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
     sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list 2>/dev/null || true
@@ -17,6 +24,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
+
+# 安装 uv (快速的 Python 包管理器)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    ln -s /root/.local/bin/uv /usr/local/bin/uv && \
+    uv --version
 
 # 条件安装 Playwright 系统依赖
 RUN if [ "$ENABLE_PUBLISHER" = "true" ]; then \
@@ -40,13 +52,14 @@ RUN if [ "$ENABLE_PUBLISHER" = "true" ]; then \
         && rm -rf /var/lib/apt/lists/*; \
     fi
 
-# 复制 requirements.txt 并安装 Python 依赖
-COPY requirements.txt .
-RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
+# 复制 pyproject.toml 和 uv.lock 并使用 uv 安装 Python 依赖
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev && \
+    uv cache clean --all
 
 # 条件安装 Playwright 浏览器（仅 Chromium，约 167 MB）
 RUN if [ "$ENABLE_PUBLISHER" = "true" ]; then \
-    playwright install chromium; \
+    uv run playwright install chromium; \
     fi
 
 # 复制后端代码
@@ -55,12 +68,12 @@ COPY . .
 # 暴露端口
 EXPOSE 5000
 
-# 设置环境变量
+# 设置应用环境变量
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
-ENV PYTHONUNBUFFERED=1
 
-# 启动应用（使用 Gunicorn）
+# 启动应用（使用 uv run 运行 gunicorn）
+# uv run 确保使用 uv 管理的 Python 环境
 # workers=1 + threads=4: 单进程多线程，确保任务状态共享，支持4个并发请求
 # timeout=600: 博客生成任务需要较长时间
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "4", "--worker-class", "gthread", "--timeout", "600", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]
+CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "4", "--worker-class", "gthread", "--timeout", "600", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]

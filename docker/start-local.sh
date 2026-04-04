@@ -24,8 +24,8 @@ ENABLE_WHATSAPP=${ENABLE_WHATSAPP:-false}
 # 项目路径
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-BACKEND_DIR="$PROJECT_ROOT/backend"
-FRONTEND_DIR="$PROJECT_ROOT/frontend"
+BACKEND_DIR="$PROJECT_ROOT/ vibe-blog / backend"
+FRONTEND_DIR="$PROJECT_ROOT/ vibe-blog / frontend"
 WHATSAPP_DIR="$PROJECT_ROOT/whatsapp-gateway"
 LOG_DIR="$PROJECT_ROOT/logs"
 

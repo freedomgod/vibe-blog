@@ -1,6 +1,6 @@
 FROM nginx:alpine
 
-COPY frontend/dist /usr/share/nginx/html
+COPY vibe-blog/frontend/dist /usr/share/nginx/html
 
 RUN echo 'server { \
     listen 80; \

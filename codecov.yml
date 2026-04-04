@@ -24,16 +24,16 @@ coverage:
     target: 60%
     threshold: 1%
     paths:
-      - "frontend/src/**"
+      - "vibe-blog/frontend/src/**"
 
   # Backend coverage
   backend:
     target: 55%
     threshold: 1%
     paths:
-      - "backend/services/**"
-      - "backend/utils/**"
-      - "backend/app.py"
+      - "vibe-blog/backend/services/**"
+      - "vibe-blog/backend/utils/**"
+      - "vibe-blog/backend/app.py"
 
 comment:
   layout: "reach,diff,flags,tree"
@@ -43,24 +43,21 @@ comment:
   require_head: yes
 
 ignore:
-  - "frontend/node_modules"
-  - "frontend/dist"
-  - "frontend/__tests__"
-  - "frontend/**/*.config.*"
-  - "backend/tests"
-  - "backend/**/__pycache__"
-  - "backend/venv"
-  - "backend/.venv"
+  - "vibe-blog/frontend/node_modules"
+  - "vibe-blog/frontend/dist"
+  - "vibe-blog/frontend/__tests__"
+  - "vibe-blog/frontend/**/*.config.*"
+  - "vibe-blog/backend/**/__pycache__"
 
 flags:
   frontend:
     paths:
-      - frontend/src
+      - vibe-blog/frontend/src
     carryforward: true
 
   backend:
     paths:
-      - backend/services
-      - backend/utils
-      - backend/app.py
+      - vibe-blog/backend/services
+      - vibe-blog/backend/utils
+      - vibe-blog/backend/app.py
     carryforward: true

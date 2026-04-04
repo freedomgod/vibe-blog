@@ -51,10 +51,10 @@ docker compose -f docker/docker-compose.yml up -d --build
 复制 `.env.example` 为 `.env` 并填写必要的配置：
 
 ```bash
-cp backend/.env.example backend/.env
+cp vibe-blog/backend/.env.example backend/.env
 ```
 
-编辑 `backend/.env`，填写以下关键配置：
+编辑 `vibe-blog/backend/.env`，填写以下关键配置：
 
 ```env
 # AI Provider 配置
